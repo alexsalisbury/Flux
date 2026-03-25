@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="Flux.WinCore/Flux.WinCore.csproj" />
+  <Project Path="Flux/Flux.csproj" />
+</Solution>
