@@ -1,11 +1,14 @@
 ﻿namespace Flux.Widgets;
 
+using Flux.WinCore.Widgets;
+using MongoDB.Bson;
+using MongoDB.Driver;
 using System;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Media;
 using System.Windows.Input;
-using Flux.WinCore.Widgets;
+using System.Windows.Media;
+using System.Windows.Shapes;
 
 public sealed class SearchWidget : Widget
 {

@@ -1,4 +1,4 @@
-﻿namespace Flux;
+﻿namespace Flux.FluxWindows;
 
 using Flux.WinCore;
 using Flux.WinCore.Widgets;

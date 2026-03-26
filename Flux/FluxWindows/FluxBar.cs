@@ -1,4 +1,4 @@
-﻿namespace Flux;
+﻿namespace Flux.FluxWindows;
 
 using Flux.Widgets;
 using Flux.WinCore;
@@ -14,8 +14,8 @@ public sealed class FluxBar : TopBar
     private readonly AppController controller;
 
     private Application currentApp;
-    private Hotkey? hotkey;
-
+    private Hotkey? hotkey; 
+    
     public FluxBar(IConfigurationRoot configuration, IConfig cfg, Application current) : base(cfg)
     {
         currentApp = current; 
@@ -38,8 +38,10 @@ public sealed class FluxBar : TopBar
 
         var search = new SearchWidget();
         var capture = new CaptureWidget();
+        var status = new MongoStatusWidget(services);
 
         layout.Register(capture.Key, capture, LayoutZone.Left);
+        layout.Register(status.Key, status, LayoutZone.Right);
         layout.Register(search.Key, search, LayoutZone.Right);
 
         this.Init(layout);
@@ -55,9 +57,13 @@ public sealed class FluxBar : TopBar
 
             capture.CaptureRequested += async (_, __) =>
             {
+                // Create the draft resource - Possible TODO for the "Abandon draft" scenario.
                 var id = await controller.CreateDraftNoteAsync();
-                MessageBox.Show($"Draft note created: Resource #{id}");
+               
+                new ResourceEditorWindow(controller, id, "").Show();
             };
+
+            
         };
     }
 

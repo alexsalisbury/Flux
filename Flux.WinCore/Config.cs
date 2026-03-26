@@ -1,4 +1,4 @@
-﻿namespace Flux.WinCore.SysInfra;
+﻿namespace Flux.WinCore;
 
 using System.Windows;
 

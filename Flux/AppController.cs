@@ -1,16 +1,26 @@
 ﻿namespace Flux;
 
 using Flux.Data;
+using Flux.Services;
+using System.Reflection.Metadata;
 using System.Threading.Tasks;
+using System.Windows.Media.Animation;
+using System.Windows.Media.Media3D;
 
 public sealed class AppController
 {
-    private readonly AppServices _services;
 
-    public AppController(AppServices services)
+    private readonly AppServices services;
+    private readonly SayingService saying;
+    private readonly TimelineService timeline;
+
+    public AppController(AppServices appServices)
     {
-        _services = services;
+        services = appServices;
+        saying = new SayingService(services.Resources);
+        timeline = new TimelineService(services.Resources);
     }
+
 
     // --- SEARCH ----------------------------------------------------------
 
@@ -25,7 +35,7 @@ public sealed class AppController
 
     public async Task<long> CreateDraftNoteAsync()
     {
-        var id = await _services.Resources.NextIdAsync();
+        var id = await services.Resources.NextIdAsync();
         var now = DateTime.UtcNow;
 
         var res = new Resource
@@ -37,12 +47,22 @@ public sealed class AppController
             Source = "Manual",
             CreatedUtc = now,
             Title = $"New Draft #{id}",
-            Artifact = new ArtifactBody("", "en", 1, now)
+            Artifact = new ArtifactBody("", "en", 1, now),
+            Revisions = new(),
+            Acts = new(),
+            Tags = new()
         };
 
-        await _services.Resources.InsertAsync(res);
+        await services.Resources.InsertAsync(res);
         return id;
     }
+
+    public Task<long> SaveDraftAsync(long resourceId, string body) => saying.SaveDraftAsync(resourceId, body);
+
+    public Task<long> CommitAsync(long resourceId, string body, string? note = null) => saying.CommitAsync(resourceId, body, note);
+
+    public Task<(List<Revision> revs, List<Act> acts)> LoadTimelineAsync(long resourceId) => timeline.LoadAsync(resourceId);
+
 
     //// --- TIMELINE --------------------------------------------------------
 
