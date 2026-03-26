@@ -1,6 +1,8 @@
 ﻿namespace Flux;
 
 using Flux.WinCore.SysInfra;
+using Microsoft.Extensions.Configuration;
+using System.Configuration;
 using System.Windows;
 
 public static class Program
@@ -13,7 +15,17 @@ public static class Program
             ShutdownMode = ShutdownMode.OnExplicitShutdown
         };
 
-        var win = new FluxBar(new DefaultConfig(), Application.Current);
+        var environment =
+                Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT")
+                ?? "Development";
+
+        var configuration = new ConfigurationBuilder()
+            .SetBasePath(AppContext.BaseDirectory)
+            .AddJsonFile("appsettings.json", optional: false)
+            .AddJsonFile($"appsettings.{environment}.json", optional: true)
+            .Build();
+
+        var win = new FluxBar(configuration, new DefaultConfig(), Application.Current);
         win.Initialize(Application.Current.Dispatcher);
         app.Run(win);
     }

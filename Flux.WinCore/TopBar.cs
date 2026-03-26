@@ -8,14 +8,11 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
-using System.Windows.Shapes;
-using System.Windows.Threading;
 
 public abstract class TopBar : Window
 {
     IWidgetManager wm;
     bool isPostLoad;
-    Menu activeMenu;
     protected IConfig config;
     protected APPBARDATA abd = new();
     protected nint hWnd;
@@ -231,12 +228,10 @@ public abstract class TopBar : Window
 
             RegisterAsAppbar();
 
-            // BuildLayoutAndWidgets();
+            this.Content = Layout.Container;
 
-            // this.Content = Layout.Container;
-
-            // this.wm = new WidgetManager(Layout);
-            // wm.StartAll();
+            this.wm = new WidgetManager(Layout);
+            wm.StartAll();
 
             isPostLoad = true;
         };

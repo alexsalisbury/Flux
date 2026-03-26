@@ -1,19 +1,28 @@
 ﻿namespace Flux;
 
+using Flux.Widgets;
 using Flux.WinCore;
 using Flux.WinCore.SysInfra;
+using Microsoft.Extensions.Configuration;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Threading;
 
 public sealed class FluxBar : TopBar
 {
+    private readonly AppServices services; 
+    private readonly AppController controller;
+
     private Application currentApp;
     private Hotkey? hotkey;
 
-    public FluxBar(IConfig cfg, Application current) : base(cfg)
+    public FluxBar(IConfigurationRoot configuration, IConfig cfg, Application current) : base(cfg)
     {
-        currentApp = current;
+        currentApp = current; 
+
+        services = new AppServices(configuration); 
+        controller = new AppController(services);
+
         this.Loaded += (_, __) =>
         {
             this.hotkey = new Hotkey(this, ModifierKeys.Control | ModifierKeys.Shift, Key.Space, () =>
@@ -25,7 +34,31 @@ public sealed class FluxBar : TopBar
 
     public void Initialize(Dispatcher dispatcher)
     {
-        this.Init(new DualLayout());
+        var layout = new DualLayout(height: this.config.Height);
+
+        var search = new SearchWidget();
+        var capture = new CaptureWidget();
+
+        layout.Register(capture.Key, capture, LayoutZone.Left);
+        layout.Register(search.Key, search, LayoutZone.Right);
+
+        this.Init(layout);
+
+        Loaded += (_, __) =>
+        {
+            search.SearchRequested += async (_, query) =>
+            {
+                var results = await controller.SearchAsync(query);
+                // replace MessageBox with SearchPalette widget later
+                MessageBox.Show($"Search executed for: {query}\nFound: {results.Count()} items");
+            };
+
+            capture.CaptureRequested += async (_, __) =>
+            {
+                var id = await controller.CreateDraftNoteAsync();
+                MessageBox.Show($"Draft note created: Resource #{id}");
+            };
+        };
     }
 
     public override void Exit() => currentApp.Shutdown();

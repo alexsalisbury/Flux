@@ -63,13 +63,7 @@ public class DualLayout : ILayout
 
     public bool TryGetWidget(string key, out IWidget widget) => _widgets.TryGetValue(key, out widget);
 
-    public void Hide(string key)
-    {
-        Manager.Hide(key);
-    }
+    public bool Hide(string key) => Manager?.Hide(key) ?? false;
 
-    public void Show(string key)
-    {
-        Manager.Show(key);
-    }
+    public bool Show(string key) => Manager?.Show(key) ?? false;
 }
