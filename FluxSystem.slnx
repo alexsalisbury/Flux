@@ -1,4 +1,13 @@
 <Solution>
+  <Folder Name="/Solution Items/">
+    <File Path=".env" />
+    <File Path=".env.example" />
+    <File Path=".gitignore" />
+    <File Path="docker-compose.yml" />
+    <File Path="LICENSE" />
+    <File Path="README.md" />
+  </Folder>
+  <Project Path="Flux.Data/Flux.Data.csproj" Id="743f90aa-df74-4230-8a62-1c49e6f64319" />
   <Project Path="Flux.WinCore/Flux.WinCore.csproj" />
   <Project Path="Flux/Flux.csproj" />
 </Solution>
