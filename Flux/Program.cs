@@ -1,6 +1,7 @@
 ﻿namespace Flux;
 
-using Flux.WinCore.SysInfra;
+using Flux.FluxWindows;
+using Flux.WinCore;
 using Microsoft.Extensions.Configuration;
 using System.Configuration;
 using System.Windows;
