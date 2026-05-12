@@ -86,10 +86,10 @@ public class ResourceStore
 
     public Task InsertAsync(Resource res) => resources.InsertOneAsync(res);
 
-    public Task<Resource?> GetAsync(long id)
+    public virtual Task<Resource?> GetAsync(long id)
         => resources.Find(r => r.ResourceId == id).FirstOrDefaultAsync();
 
-    public async Task<long> AppendRevisionAsync(
+    public virtual async Task<long> AppendRevisionAsync(
     long resourceId,
     RevisionKind kind,
     string body,
@@ -126,7 +126,7 @@ public class ResourceStore
         return next;
     }
 
-    public async Task<string> AppendActAsync(
+    public virtual async Task<string> AppendActAsync(
         long resourceId,
         long revisionId,
         ActKind kind,
@@ -147,7 +147,7 @@ public class ResourceStore
         return actId;
     }
 
-    public async Task<long?> SupersedeLatestCommitAsync(long resourceId, long currentRevisionId)
+    public virtual async Task<long?> SupersedeLatestCommitAsync(long resourceId, long currentRevisionId)
     {
         var doc = await resources.Find(r => r.ResourceId == resourceId).FirstOrDefaultAsync();
         if (doc == null) return null;
@@ -215,7 +215,7 @@ public class ResourceStore
     }
 
     /// <summary>Resolve a title; if missing and createIfMissing=true, create it.</summary>
-    public async Task<long?> ResolveOrCreateByTitleAsync(string title, bool createIfMissing)
+    public virtual async Task<long?> ResolveOrCreateByTitleAsync(string title, bool createIfMissing)
     {
         var existing = await FindByTitleAsync(title);
         if (existing != null) return existing.ResourceId;
@@ -226,7 +226,7 @@ public class ResourceStore
     }
 
     /// <summary>Adds an outgoing link if not already present.</summary>
-    public async Task UpsertLinkAsync(long fromResourceId, string linkType, long toResourceId)
+    public virtual async Task UpsertLinkAsync(long fromResourceId, string linkType, long toResourceId)
     {
         var filter = Builders<Resource>.Filter.Eq(r => r.ResourceId, fromResourceId);
 
