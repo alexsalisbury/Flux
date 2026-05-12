@@ -29,7 +29,7 @@ public class SearchServiceEdgeCaseTests
 
     private static SearchService Setup(List<Resource> data)
     {
-        var store = Substitute.ForPartsOf<ResourceStore>();
+        var store = Substitute.For<IResourceStore>();
         store.TextSearchAsync(Arg.Any<string>(), Arg.Any<int>())
              .Returns(Task.FromResult(data));
         return new SearchService(store);

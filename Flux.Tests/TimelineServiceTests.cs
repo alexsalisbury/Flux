@@ -6,10 +6,9 @@ using NSubstitute;
 
 public class TimelineServiceTests
 {
-    private static (ResourceStore store, TimelineService svc) Setup()
+    private static (IResourceStore store, TimelineService svc) Setup()
     {
-        var store = Substitute.ForPartsOf<ResourceStore>();
-        store.WhenForAnyArgs(s => s.GetAsync(default)).DoNotCallBase();
+        var store = Substitute.For<IResourceStore>();
         return (store, new TimelineService(store));
     }
 

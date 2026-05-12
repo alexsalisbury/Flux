@@ -4,9 +4,9 @@ using Flux.Data;
 
 public sealed class AutoWeaver
 {
-    private readonly ResourceStore _store;
+    private readonly IResourceStore _store;
 
-    public AutoWeaver(ResourceStore store)
+    public AutoWeaver(IResourceStore store)
     {
         _store = store;
     }

@@ -4,9 +4,9 @@ using Flux.Data;
 
 public sealed class TimelineService
 {
-    private readonly ResourceStore _store;
+    private readonly IResourceStore _store;
 
-    public TimelineService(ResourceStore store)
+    public TimelineService(IResourceStore store)
     {
         _store = store;
     }

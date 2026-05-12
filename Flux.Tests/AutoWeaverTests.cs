@@ -6,9 +6,9 @@ using NSubstitute;
 
 public class AutoWeaverTests
 {
-    private static (ResourceStore store, AutoWeaver weaver) Setup()
+    private static (IResourceStore store, AutoWeaver weaver) Setup()
     {
-        var store = Substitute.ForPartsOf<ResourceStore>();
+        var store = Substitute.For<IResourceStore>();
         return (store, new AutoWeaver(store));
     }
 

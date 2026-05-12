@@ -27,9 +27,9 @@ public class SearchServiceTests
     private static Act MakeAct(long revId, ActKind kind) =>
         new(Guid.NewGuid().ToString("N"), revId, kind, DateTime.UtcNow, null);
 
-    private static (ResourceStore store, SearchService svc) Setup(List<Resource> data)
+    private static (IResourceStore store, SearchService svc) Setup(List<Resource> data)
     {
-        var store = Substitute.ForPartsOf<ResourceStore>();
+        var store = Substitute.For<IResourceStore>();
         store.TextSearchAsync(Arg.Any<string>(), Arg.Any<int>())
              .Returns(Task.FromResult(data));
         return (store, new SearchService(store));

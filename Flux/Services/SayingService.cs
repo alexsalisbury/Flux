@@ -4,9 +4,9 @@ using Flux.Data;
 
 public sealed class SayingService
 {
-    private readonly ResourceStore _store;
+    private readonly IResourceStore _store;
 
-    public SayingService(ResourceStore store)
+    public SayingService(IResourceStore store)
     {
         _store = store;
     }

@@ -6,9 +6,9 @@ public enum ActFilter { CommitOnly, Drafts, Any }
 
 public sealed class SearchService
 {
-    private readonly ResourceStore _store;
+    private readonly IResourceStore _store;
 
-    public SearchService(ResourceStore store)
+    public SearchService(IResourceStore store)
     {
         _store = store;
     }
