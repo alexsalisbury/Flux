@@ -6,9 +6,9 @@ using NSubstitute;
 
 public class SayingServiceTests
 {
-    private static (ResourceStore store, SayingService svc) Setup()
+    private static (IResourceStore store, SayingService svc) Setup()
     {
-        var store = Substitute.ForPartsOf<ResourceStore>();
+        var store = Substitute.For<IResourceStore>();
         return (store, new SayingService(store));
     }
 

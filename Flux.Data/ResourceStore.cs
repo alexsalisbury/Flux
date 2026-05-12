@@ -57,12 +57,10 @@ public sealed record Act(
 );
 
 
-public class ResourceStore
+public sealed class ResourceStore : IResourceStore
 {
-    private readonly IMongoCollection<Resource> resources = null!;
-    private readonly IMongoCollection<BsonDocument> counters = null!;
-
-    protected ResourceStore() { }
+    private readonly IMongoCollection<Resource> resources;
+    private readonly IMongoCollection<BsonDocument> counters;
 
     public ResourceStore(MongoCollections col)
     {
@@ -86,10 +84,10 @@ public class ResourceStore
 
     public Task InsertAsync(Resource res) => resources.InsertOneAsync(res);
 
-    public virtual Task<Resource?> GetAsync(long id)
+    public Task<Resource?> GetAsync(long id)
         => resources.Find(r => r.ResourceId == id).FirstOrDefaultAsync();
 
-    public virtual async Task<long> AppendRevisionAsync(
+    public async Task<long> AppendRevisionAsync(
     long resourceId,
     RevisionKind kind,
     string body,
@@ -126,7 +124,7 @@ public class ResourceStore
         return next;
     }
 
-    public virtual async Task<string> AppendActAsync(
+    public async Task<string> AppendActAsync(
         long resourceId,
         long revisionId,
         ActKind kind,
@@ -147,7 +145,7 @@ public class ResourceStore
         return actId;
     }
 
-    public virtual async Task<long?> SupersedeLatestCommitAsync(long resourceId, long currentRevisionId)
+    public async Task<long?> SupersedeLatestCommitAsync(long resourceId, long currentRevisionId)
     {
         var doc = await resources.Find(r => r.ResourceId == resourceId).FirstOrDefaultAsync();
         if (doc == null) return null;
@@ -165,7 +163,7 @@ public class ResourceStore
 
 
     /// <summary>Text search (lexical). Returns recent first by CreatedUtc.</summary>
-    public virtual async Task<List<Resource>> TextSearchAsync(string query, int take = 50)
+    public async Task<List<Resource>> TextSearchAsync(string query, int take = 50)
     {
         if (string.IsNullOrWhiteSpace(query)) return new();
 
@@ -215,7 +213,7 @@ public class ResourceStore
     }
 
     /// <summary>Resolve a title; if missing and createIfMissing=true, create it.</summary>
-    public virtual async Task<long?> ResolveOrCreateByTitleAsync(string title, bool createIfMissing)
+    public async Task<long?> ResolveOrCreateByTitleAsync(string title, bool createIfMissing)
     {
         var existing = await FindByTitleAsync(title);
         if (existing != null) return existing.ResourceId;
@@ -226,7 +224,7 @@ public class ResourceStore
     }
 
     /// <summary>Adds an outgoing link if not already present.</summary>
-    public virtual async Task UpsertLinkAsync(long fromResourceId, string linkType, long toResourceId)
+    public async Task UpsertLinkAsync(long fromResourceId, string linkType, long toResourceId)
     {
         var filter = Builders<Resource>.Filter.Eq(r => r.ResourceId, fromResourceId);
 
