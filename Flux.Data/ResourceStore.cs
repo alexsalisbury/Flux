@@ -7,8 +7,9 @@ using MongoDB.Driver;
 public enum ResourceType { ArtifactOnly = 0, AssetOnly = 1 }
 public enum ResourceKind { Note = 0, WebClip = 1 }
 public enum RevisionKind { Edit = 0, Promote = 1 }
-public enum ActKind { Commit = 0, Tentative = 1, Supersede = 2 }
+public enum ActKind { Commit = 0, Tentative = 1, Supersede = 2, Reconsider = 3, Endorse = 4 }
 
+public sealed record ResourceLink(string Type, long ToResourceId);
 
 public sealed record ArtifactBody(
     string Body,
@@ -35,6 +36,8 @@ public sealed record Resource
     public List<Act> Acts { get; init; } = new();
 
     public List<string> Tags { get; init; } = new();
+    public List<ResourceLink> Links { get; init; } = new();
+
 }
 
 public sealed record Revision(
@@ -157,4 +160,86 @@ public sealed class ResourceStore
         await AppendActAsync(resourceId, prior.RevisionId, ActKind.Supersede, "Auto-superseded");
         return prior.RevisionId;
     }
+
+
+    /// <summary>Text search (lexical). Returns recent first by CreatedUtc.</summary>
+    public async Task<List<Resource>> TextSearchAsync(string query, int take = 50)
+    {
+        if (string.IsNullOrWhiteSpace(query)) return new();
+
+        var filter = Builders<Resource>.Filter.Text(query);
+        var sort = Builders<Resource>.Sort.Descending(r => r.CreatedUtc);
+
+        var rows = await resources
+            .Find(filter)
+            .Sort(sort)
+            .Limit(take)
+            .ToListAsync();
+
+        return rows;
+    }
+
+    /// <summary>Find by exact Title (case-insensitive). Returns null if not found.</summary>
+    public Task<Resource?> FindByTitleAsync(string title)
+    {
+        var filter = Builders<Resource>.Filter.Where(r => r.Title != null && r.Title.ToLower() == title.ToLower());
+        return resources.Find(filter).FirstOrDefaultAsync();
+    }
+
+    /// <summary>Create a titled Resource (Note) with empty body; returns new ResourceId.</summary>
+    public async Task<long> CreateTitledResourceAsync(string title, string source = "Weaver", string? language = "en")
+    {
+        var id = await NextIdAsync();
+        var now = DateTime.UtcNow;
+
+        var res = new Resource
+        {
+            Id = ObjectId.GenerateNewId(),
+            ResourceId = id,
+            ResourceType = ResourceType.ArtifactOnly,
+            Kind = ResourceKind.Note,
+            Source = source,
+            CreatedUtc = now,
+            Title = title,
+            Artifact = new ArtifactBody("", language, 1, now),
+            Revisions = new(),
+            Acts = new(),
+            Tags = new(),
+            Links = new()
+        };
+
+        await InsertAsync(res);
+        return id;
+    }
+
+    /// <summary>Resolve a title; if missing and createIfMissing=true, create it.</summary>
+    public async Task<long?> ResolveOrCreateByTitleAsync(string title, bool createIfMissing)
+    {
+        var existing = await FindByTitleAsync(title);
+        if (existing != null) return existing.ResourceId;
+
+        if (!createIfMissing) return null;
+
+        return await CreateTitledResourceAsync(title);
+    }
+
+    /// <summary>Adds an outgoing link if not already present.</summary>
+    public async Task UpsertLinkAsync(long fromResourceId, string linkType, long toResourceId)
+    {
+        var filter = Builders<Resource>.Filter.Eq(r => r.ResourceId, fromResourceId);
+
+        // Prevent duplicates: check if an identical link exists
+        var doc = await resources.Find(filter).FirstOrDefaultAsync();
+        if (doc == null) return;
+
+        if (doc.Links.Any(l => l.Type == linkType && l.ToResourceId == toResourceId)) return;
+
+        var update = Builders<Resource>.Update.Push(r => r.Links, new ResourceLink(linkType, toResourceId));
+        var res = await resources.UpdateOneAsync(filter, update);
+
+        if (res.MatchedCount == 0)
+            Console.WriteLine($"[UpsertLink] WARN: from={fromResourceId} not matched.");
+    }
+
+
 }

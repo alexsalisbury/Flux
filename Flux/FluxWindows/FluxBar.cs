@@ -10,17 +10,17 @@ using System.Windows.Threading;
 
 public sealed class FluxBar : TopBar
 {
-    private readonly AppServices services; 
+    private readonly AppServices services;
     private readonly AppController controller;
 
     private Application currentApp;
-    private Hotkey? hotkey; 
-    
+    private Hotkey? hotkey;
+
     public FluxBar(IConfigurationRoot configuration, IConfig cfg, Application current) : base(cfg)
     {
-        currentApp = current; 
+        currentApp = current;
 
-        services = new AppServices(configuration); 
+        services = new AppServices(configuration);
         controller = new AppController(services);
 
         this.Loaded += (_, __) =>
@@ -59,13 +59,36 @@ public sealed class FluxBar : TopBar
             {
                 // Create the draft resource - Possible TODO for the "Abandon draft" scenario.
                 var id = await controller.CreateDraftNoteAsync();
-               
+
                 new ResourceEditorWindow(controller, id, "").Show();
             };
 
-            
+            search.SearchRequested += (_, text) =>
+            {
+                var pal = new SearchPaletteWindow(controller);
+                pal.OpenResourceRequested += (_, rid) =>
+                {
+                    // open editor for that resource
+                    _ = OpenEditorAsync(rid);
+                };
+                pal.Show();
+                pal.Activate();
+                // optionally prefill and run
+                // pal.SetQuery(text);
+            };
+
+
         };
     }
 
     public override void Exit() => currentApp.Shutdown();
+
+
+    private async Task OpenEditorAsync(long rid)
+    {
+        var doc = await services.Resources.GetAsync(rid);
+        var body = doc?.Artifact?.Body ?? "";
+        new ResourceEditorWindow(controller, rid, body).Show();
+    }
+
 }

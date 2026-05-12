@@ -89,13 +89,15 @@ public sealed class ResourceEditorWindow : Window
         _saveDraft.Click += async (_, __) =>
         {
             await _controller.SaveDraftAsync(_resourceId, _editor.Text);
-            MessageBox.Show("Draft saved.");
+            await _controller.WeaveAsync(_resourceId, _editor.Text, createMissing: false); // resolve only
+            MessageBox.Show("Draft saved + woven.");
         };
 
         _commit.Click += async (_, __) =>
         {
             await _controller.CommitAsync(_resourceId, _editor.Text);
-            MessageBox.Show("Committed.");
+            await _controller.WeaveAsync(_resourceId, _editor.Text, createMissing: true); // create missing on commit
+            MessageBox.Show("Committed + woven.");
         };
 
         _timeline.Click += async (_, __) => await OpenTimelineAsync();
