@@ -1,8 +1,7 @@
-﻿namespace Flux.Widgets;
+namespace Flux.Widgets;
 
+using Flux.Data;
 using Flux.WinCore.Widgets;
-using MongoDB.Bson;
-using MongoDB.Driver;
 using System;
 using System.Windows;
 using System.Windows.Controls;
@@ -15,11 +14,11 @@ public sealed class MongoStatusWidget : Widget
 
     private readonly Ellipse dot;
     private readonly TextBlock _label;
-    private readonly AppServices _services;
+    private readonly MongoDiagnostic _diagnostic;
 
     public MongoStatusWidget(AppServices services)
     {
-        _services = services;
+        _diagnostic = new MongoDiagnostic(services.Conn.Database);
 
         var panel = new StackPanel
         {
@@ -46,80 +45,43 @@ public sealed class MongoStatusWidget : Widget
         panel.Children.Add(dot);
         panel.Children.Add(_label);
 
-        this.Child = panel;   // attach UI
+        this.Child = panel;
     }
 
     public override void Start()
     {
         base.Start();
-        _ = CheckAsync();
+        _ = RunCheckAsync();
     }
 
-    private async Task CheckAsync()
+    private async Task RunCheckAsync()
     {
-        try
+        var result = await _diagnostic.CheckAsync();
+        ApplyStatus(result);
+    }
+
+    internal void ApplyStatus(MongoDiagnosticResult result)
+    {
+        Application.Current.Dispatcher.Invoke(() =>
         {
-            var db = _services.Conn.Database;
-
-            // Try a simple ping command
-            var cmd = new JsonCommand<object>("{ ping: 1 }");
-            await db.RunCommandAsync(cmd);
-
-            // Try a read
-            var collections = await db.ListCollectionNamesAsync();
-            await collections.MoveNextAsync();
-
-            // Try a small write (increment a counter)
-            var counter = _services.Collections.Database
-                .GetCollection<BsonDocument>("diagnostic");
-            await counter.InsertOneAsync(new BsonDocument("ts", DateTime.UtcNow));
-
-            // If we made it here: ✅ AUTH + READ + WRITE work
-            SetStatusOk();
-        }
-        catch (MongoCommandException mce)
-        {
-            if (mce.Message.Contains("not authorized", StringComparison.OrdinalIgnoreCase))
+            switch (result.Status)
             {
-                SetStatusUnauthorized();
-                return;
+                case MongoStatus.Ok:
+                    dot.Fill = new SolidColorBrush(Color.FromRgb(0x3A, 0xD1, 0x73));
+                    _label.Text = "Mongo OK";
+                    ToolTip = "Connected, authenticated, and writable.";
+                    break;
+                case MongoStatus.Unauthorized:
+                    dot.Fill = new SolidColorBrush(Color.FromRgb(0xFF, 0xD0, 0x00));
+                    _label.Text = "Mongo Auth?";
+                    ToolTip = "Connected, but authentication failed. Check username/password/authSource.";
+                    break;
+                case MongoStatus.Error:
+                    dot.Fill = new SolidColorBrush(Color.FromRgb(0xE0, 0x3A, 0x3A));
+                    _label.Text = "Mongo ERR";
+                    ToolTip = $"Connection failed: {result.Message}";
+                    break;
             }
-
-            SetStatusError(mce.Message);
-        }
-        catch (Exception ex)
-        {
-            SetStatusError(ex.Message);
-        }
-    }
-
-    private void SetStatusOk()
-    {
-        Application.Current.Dispatcher.Invoke(() =>
-        {
-            dot.Fill = new SolidColorBrush(Color.FromRgb(0x3A, 0xD1, 0x73)); // green
-            _label.Text = "Mongo OK";
-            ToolTip = "Connected, authenticated, and writable.";
-        });
-    }
-
-    private void SetStatusUnauthorized()
-    {
-        Application.Current.Dispatcher.Invoke(() =>
-        {
-            dot.Fill = new SolidColorBrush(Color.FromRgb(0xFF, 0xD0, 0x00)); // yellow
-            _label.Text = "Mongo Auth?";
-            ToolTip = "Connected, but authentication failed. Check username/password/authSource.";
-        });
-    }
-
-    private void SetStatusError(string msg)
-    {
-        Application.Current.Dispatcher.Invoke(() =>
-        {
-            dot.Fill = new SolidColorBrush(Color.FromRgb(0xE0, 0x3A, 0x3A)); // red
-            _label.Text = "Mongo ERR";
-            ToolTip = $"Connection failed: {msg}";
         });
     }
 }
