@@ -57,10 +57,12 @@ public sealed record Act(
 );
 
 
-public sealed class ResourceStore
+public class ResourceStore
 {
-    private readonly IMongoCollection<Resource> resources;
-    private readonly IMongoCollection<BsonDocument> counters;
+    private readonly IMongoCollection<Resource> resources = null!;
+    private readonly IMongoCollection<BsonDocument> counters = null!;
+
+    protected ResourceStore() { }
 
     public ResourceStore(MongoCollections col)
     {
@@ -163,7 +165,7 @@ public sealed class ResourceStore
 
 
     /// <summary>Text search (lexical). Returns recent first by CreatedUtc.</summary>
-    public async Task<List<Resource>> TextSearchAsync(string query, int take = 50)
+    public virtual async Task<List<Resource>> TextSearchAsync(string query, int take = 50)
     {
         if (string.IsNullOrWhiteSpace(query)) return new();
 
