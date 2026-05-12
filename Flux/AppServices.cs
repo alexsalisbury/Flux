@@ -4,6 +4,7 @@ using Flux.Data;
 using Flux.Data.MongoCore;
 using Microsoft.Extensions.Configuration;
 using MongoDB.Bson;
+using MongoDB.Driver;
 using System.Threading.Tasks;
 
 public sealed class AppServices : IDisposable
@@ -27,6 +28,8 @@ public sealed class AppServices : IDisposable
         Resources = new ResourceStore(Collections);
         Assets = new AssetStore(Collections);
         Whispers = new WhisperStore(Collections);
+
+        _ = EnsureIndexesAsync(); // Smell
     }
 
     /// <summary>
@@ -54,4 +57,24 @@ public sealed class AppServices : IDisposable
     }
 
     public void Dispose() { /* nothing: MongoClient is managed internally */ }
+
+    private async Task EnsureIndexesAsync()
+    {
+        var res = Collections.Resources;
+
+        // Combined text index on Title + Artifact body (lexical baseline for RAG later)
+        var keys = Builders<Resource>.IndexKeys
+            .Text(r => r.Title)
+            .Text("artifact.body");
+
+        try
+        {
+            await res.Indexes.CreateOneAsync(new CreateIndexModel<Resource>(keys));
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[Index] Create text index failed (may already exist): {ex.Message}");
+        }
+    }
+
 }

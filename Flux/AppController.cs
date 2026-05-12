@@ -9,16 +9,23 @@ using System.Windows.Media.Media3D;
 
 public sealed class AppController
 {
-
     private readonly AppServices services;
     private readonly SayingService saying;
     private readonly TimelineService timeline;
+
+    private readonly SearchService search;
+    private readonly AutoWeaver weaver;
+
 
     public AppController(AppServices appServices)
     {
         services = appServices;
         saying = new SayingService(services.Resources);
         timeline = new TimelineService(services.Resources);
+
+        search = new SearchService(services.Resources);
+        weaver = new AutoWeaver(services.Resources);
+
     }
 
 
@@ -64,12 +71,10 @@ public sealed class AppController
     public Task<(List<Revision> revs, List<Act> acts)> LoadTimelineAsync(long resourceId) => timeline.LoadAsync(resourceId);
 
 
-    //// --- TIMELINE --------------------------------------------------------
+    public Task<List<Resource>> SearchAsync(string query, ActFilter act = ActFilter.CommitOnly, int take = 50)
+        => search.SearchAsync(query, act, take);
 
-    //public Task<List<Revision>> GetRevisionsAsync(long resourceId)
-    //{
-    //    // Phase 1: empty
-    //    // Phase 2: fetch res.Revisions
-    //    return Task.FromResult(new List<Revision>());
-    //}
+    public Task WeaveAsync(long resourceId, string body, bool createMissing = false)
+        => weaver.WeaveAsync(resourceId, body, createMissing);
+
 }
