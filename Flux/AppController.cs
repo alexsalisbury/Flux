@@ -2,31 +2,29 @@
 
 using Flux.Data;
 using Flux.Services;
-using System.Reflection.Metadata;
 using System.Threading.Tasks;
-using System.Windows.Media.Animation;
-using System.Windows.Media.Media3D;
 
 public sealed class AppController
 {
-    private readonly AppServices services;
+    private readonly IResourceStore _store;
     private readonly SayingService saying;
     private readonly TimelineService timeline;
 
     private readonly SearchService search;
     private readonly AutoWeaver weaver;
 
-
-    public AppController(AppServices appServices)
+    public AppController(IResourceStore store)
     {
-        services = appServices;
-        saying = new SayingService(services.Resources);
-        timeline = new TimelineService(services.Resources);
+        _store = store;
+        saying = new SayingService(store);
+        timeline = new TimelineService(store);
 
-        search = new SearchService(services.Resources);
-        weaver = new AutoWeaver(services.Resources);
+        search = new SearchService(store);
+        weaver = new AutoWeaver(store);
 
     }
+
+    public AppController(AppServices appServices) : this(appServices.Resources) { }
 
 
     // --- SEARCH ----------------------------------------------------------
@@ -42,7 +40,7 @@ public sealed class AppController
 
     public async Task<long> CreateDraftNoteAsync()
     {
-        var id = await services.Resources.NextIdAsync();
+        var id = await _store.NextIdAsync();
         var now = DateTime.UtcNow;
 
         var res = new Resource
@@ -60,7 +58,7 @@ public sealed class AppController
             Tags = new()
         };
 
-        await services.Resources.InsertAsync(res);
+        await _store.InsertAsync(res);
         return id;
     }
 
