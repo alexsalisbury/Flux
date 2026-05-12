@@ -1,7 +1,5 @@
 ﻿namespace Flux.WinCore.Widgets;
 
-using System.Windows;
-
 public class WidgetManager : IWidgetManager
 {
     private readonly ILayout _layout;
@@ -41,25 +39,17 @@ public class WidgetManager : IWidgetManager
     public bool Show(string key)
     {
         if (!_layout.TryGetWidget(key, out var w)) return false;
-        if (w.View is FrameworkElement fe)
-        {
-            fe.Visibility = Visibility.Visible;
-            if (w is IActiveWidget aw && !aw.IsActive) aw.Start();
-            return true;
-        }
-        return false;
+        w.Show();
+        if (w is IActiveWidget aw && !aw.IsActive) aw.Start();
+        return true;
     }
 
     public bool Hide(string key)
     {
         if (!_layout.TryGetWidget(key, out var w)) return false;
-        if (w.View is FrameworkElement fe)
-        {
-            if (w is IActiveWidget aw && aw.IsActive) aw.Stop();
-            fe.Visibility = Visibility.Collapsed;
-            return true;
-        }
-        return false;
+        if (w is IActiveWidget aw && aw.IsActive) aw.Stop();
+        w.Hide();
+        return true;
     }
 
 }

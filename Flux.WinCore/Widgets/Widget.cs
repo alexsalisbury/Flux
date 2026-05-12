@@ -18,6 +18,9 @@ public interface IWidget
     void Init();                    // One-time setup
     void Start();                   // Start live behavior (timers, subscriptions)
     void Stop();                    // Stop live behavior
+    bool IsVisible { get; }
+    void Show();
+    void Hide();
 }
 
 public interface IActiveWidget : IWidget
@@ -38,6 +41,12 @@ public abstract class Widget : Border, IActiveWidget, IDisposable
     public virtual void Start() => IsActive = true;
 
     public virtual void Stop() => IsActive = false;
+
+    public bool IsVisible => Visibility == Visibility.Visible;
+
+    public new void Show() => Visibility = Visibility.Visible;
+
+    public new void Hide() => Visibility = Visibility.Collapsed;
 
     protected virtual void Dispose(bool disposing) { }
 
