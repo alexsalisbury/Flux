@@ -62,57 +62,20 @@ public abstract class TopBar : Window
 
     public void AppbarSetPos()
     {
+        var edge = AppBarLayout.ParseEdge(config.DockEdge);
+        abd.uEdge = (uint)edge;
 
-        const int ABE_LEFT = 0;
-        const int ABE_TOP = 1;
-        const int ABE_RIGHT = 2;
-        const int ABE_BOTTOM = 3;
+        var initial = AppBarLayout.ComputeInitialRect(edge, screenWidth, screenHeight, Scale);
+        abd.rc = new() { Left = initial.Left, Top = initial.Top, Right = initial.Right, Bottom = initial.Bottom };
 
-        abd.uEdge = config.DockEdge switch
-        {
-            "left" => ABE_LEFT,
-            "top" => ABE_TOP,
-            "right" => ABE_RIGHT,
-            "bottom" => ABE_BOTTOM,
-            _ => ABE_TOP,
-        };
+        Shell32.SHAppBarMessage((uint)APPBARMESSAGE.QueryPos, ref abd);
 
-        switch (abd.uEdge)
-        {
-            case ABE_LEFT or ABE_RIGHT:
-                abd.rc = new() { Top = 0, Bottom = Convert.ToInt32(screenHeight * TopBar.Scale) };
-                break;
-            case ABE_TOP or ABE_BOTTOM:
-                abd.rc = new() { Left = 0, Right = Convert.ToInt32(screenWidth * TopBar.Scale) };
-                break;
-        }
+        var adjusted = AppBarLayout.ComputeAdjustedRect(
+            edge, initial, screenHeight, Scale,
+            config.Height, config.MarginYTop, config.MarginYBottom);
+        abd.rc = new() { Left = adjusted.Left, Top = adjusted.Top, Right = adjusted.Right, Bottom = adjusted.Bottom };
 
-        uint res2 = Shell32.SHAppBarMessage((uint)APPBARMESSAGE.QueryPos, ref abd);
-        //Logger.Log($"APPBAR RECT, L: {abd.rc.Left}, T: {abd.rc.Top}, R: {abd.rc.Right}, B: {abd.rc.Bottom}");
-
-        // adjust
-        switch (abd.uEdge)
-        {
-            case ABE_LEFT:
-                //abd.rc.Right = abd.rc.Left + config.width;
-                break;
-            case ABE_TOP:
-                abd.rc.Bottom = Convert.ToInt32((config.Height + 2 * config.MarginYTop) * TopBar.Scale);
-                break;
-            case ABE_RIGHT:
-                //abd.rc.Left = abd.rc.Right - config.width;
-                break;
-            case ABE_BOTTOM:
-                abd.rc.Top = Convert.ToInt32((screenHeight - config.Height - 2 * config.MarginYBottom) * TopBar.Scale);
-                abd.rc.Bottom = Convert.ToInt32(screenHeight * TopBar.Scale);
-                break;
-        }
-
-        uint res3 = Shell32.SHAppBarMessage((uint)APPBARMESSAGE.SetPos, ref abd); // rect must be in absolute pixels, i.e. scale has to be multiplied to both
-                                                                                  // screen sizes and config sizes
-                                                                                  // Logger.Log($"REGISTERED AS APPBAR, abd.qpos: {res2}, abm.setpos: {res3}");
-                                                                                  // RectPrinter(abd.rc);
-                                                                                  // Logger.Log($"win32: {Marshal.GetLastWin32Error()}");
+        Shell32.SHAppBarMessage((uint)APPBARMESSAGE.SetPos, ref abd);
     }
 
 
@@ -143,12 +106,9 @@ public abstract class TopBar : Window
         this.Width = config.Width;
         this.Height = config.Height;
         this.Left = config.MarginXLeft;
-        this.Top = config.DockEdge switch
-        {
-            "top" => config.MarginYTop,
-            "bottom" => screenHeight - (config.Height + config.MarginYBottom),
-            _ => config.MarginYTop
-        };
+        this.Top = AppBarLayout.ComputeWindowTop(
+            config.DockEdge, screenHeight, config.Height,
+            config.MarginYTop, config.MarginYBottom);
 
 
         this.BorderBrush = ThemePalette.BrushFromHex(config.BorderColor);
